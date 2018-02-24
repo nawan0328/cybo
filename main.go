@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
-	"time"
+	"strings"
+	"strconv"
+	"os"
+	"bufio"
 
 	ole "github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
@@ -48,24 +51,33 @@ func main() {
 		fmt.Println("HTS Server")
 	}
 
-	checkPrice()
-
-	/*for {
-		fmt.Println("test")
-		time.Sleep(1*time.Second)
-	}*/
-	time.Sleep(1*time.Second)
-	fmt.Scanln()
+	fmt.Printf("Input Code : ")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	codes := scanner.Text()
+	code := strings.Split(codes, " ")
+	for _, num := range code {
+		if len([]rune(num)) != 6{
+			fmt.Println(num, "is wrong check six digits")
+			continue
+		}
+		_, err = strconv.Atoi(num)
+		if err != nil{
+			fmt.Println(num, "is not int")
+			continue
+		}
+		checkPrice(num)
+	}
 }
 
-func checkPrice(){
+func checkPrice(icode string){
 
-	//ole.CoInitialize(1)
-	//defer ole.CoUninitialize()
+	ole.CoInitialize(1)
+	defer ole.CoUninitialize()
 	unknown, _ := oleutil.CreateObject("Dscbo1.StockMst")
 	CP_StockPrice, _ := unknown.QueryInterface(ole.IID_IDispatch)
 
-	_, err := oleutil.CallMethod(CP_StockPrice, "SetInputValue", 0, "A000660")
+	_, err := oleutil.CallMethod(CP_StockPrice, "SetInputValue", 0, "A"+icode)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -79,7 +91,11 @@ func checkPrice(){
 	name := oleutil.MustCallMethod(CP_StockPrice,"GetHeaderValue", 1)
 	price := oleutil.MustCallMethod(CP_StockPrice,"GetHeaderValue", 11)
 
+	if code.ToString() == "" {
+		return
+	}
 	fmt.Println("Code : ", code.Value(), "Name : ", name.Value(), "Price : ", price.Value())
+	//fmt.Println(i32toi(price.Value())*100)
 
 }
 
